@@ -15,9 +15,9 @@ BEGIN
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "FileDescription",  "Sandox\0"
+      VALUE "FileDescription",  "Sandbox\0"
       VALUE "FileVersion",  "1.0.0\0"
-      VALUE "ProductName",  "Sandox\0"
+      VALUE "ProductName",  "Sandbox\0"
       VALUE "ProductVersion",  "1.0.0\0"
     END
   END
