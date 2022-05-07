@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="qrXLG5" name="Sandbox" projectType="consoleapp" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
+              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
+              cppLanguageStandard="20">
   <MAINGROUP id="YXE66E" name="Sandbox">
     <GROUP id="{3290ABB4-EAC4-5EE7-DA5F-D6E7FFA6F741}" name="Source">
       <FILE id="I8pVkO" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
