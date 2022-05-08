@@ -105,20 +105,42 @@ private:
     
 };
 
-namespace ParamHelpers
+
+class ParameterList
 {
+public:
     template <typename T>
-    std::unique_ptr<Parameter> Create(const juce::Identifier Name, const T& InitialValue = {})
+    ParameterList& add(const juce::Identifier Name, const T& InitialValue = {})
     {
-        return std::unique_ptr<Parameter>(static_cast<Parameter*>(new ParamType<T>(Name, InitialValue)));
+        auto [ it, res ] = existingNames_.insert(Name);
+        if(res)
+        {
+            list_.push_back(std::make_unique<ParamType<T>>(Name, InitialValue));
+        }
+        else
+        {
+            jassert(false); // inserting a parameter w/ an identical name to one that already exists in the list
+            // ignoring insert
+        }
+        
+        return *this;
     }
 
     template <typename T>
-    std::unique_ptr<Parameter> Create(const juce::Identifier Name, T&& InitialValue)
+    ParameterList& add(const juce::Identifier Name, T&& InitialValue)
     {
-        return std::make_unique<ParamType<T>>(Name, InitialValue);
+        list_.push_back(std::make_unique<ParamType<T>>(Name, InitialValue));
+        return *this;
     }
-}; // namespace ParamHelpers
+
+    // iterator forwarding
+    std::vector<std::unique_ptr<Parameter>>::iterator begin() { return list_.begin(); }
+    std::vector<std::unique_ptr<Parameter>>::iterator end() { return list_.end(); }
+    
+private:
+    std::vector<std::unique_ptr<Parameter>> list_;
+    std::set<juce::Identifier> existingNames_;
+};
 
 struct Position3D
 {
@@ -156,18 +178,19 @@ int main (int, char*)
     }
 
     // parameter list declaration
-    std::vector<std::unique_ptr<Parameter>> paramList;
+    ParameterList paramList;
     
-    paramList.push_back(ParamHelpers::Create<float>("HPF frequency"));
-    paramList.push_back(ParamHelpers::Create<float>("Num Taps", 4));
-    paramList.push_back(ParamHelpers::Create<bool>("Enabled?", false));
-    paramList.push_back(ParamHelpers::Create<Position3D>("Source Position3D", {0.f, 25.f, 10.f}));
-    paramList.push_back(ParamHelpers::Create<Position2D>("Source Position2D", {0.f, 25.f}));
-    paramList.push_back(ParamHelpers::Create<std::vector<float>>("buffer", myBuffer));
-    paramList.push_back(ParamHelpers::Create<std::vector<float>>("buffer", { 1.1f, 2.1f, 3.1f, 4.1f }));
-    paramList.push_back(ParamHelpers::Create<std::vector<float>>("buffer", { 1.f, 2.f, 3.f }));
-    paramList.push_back(ParamHelpers::Create<std::vector<float>>("buffer", { 1.f, 2.f }));
-    paramList.push_back(ParamHelpers::Create<std::vector<float>>("buffer", { 1.f }));
+    paramList
+        .add<float>("HPF frequency")
+        .add<float>("Num Taps", 4)
+        .add<bool>("Enabled?", false)
+        .add<Position3D>("Source Position3D", {0.f, 25.f, 10.f})
+        .add<Position2D>("Source Position2D", {0.f, 25.f})
+        .add<std::vector<float>>("buffer", myBuffer)
+        .add<std::vector<float>>("buffer", { 1.1f, 2.1f, 3.1f, 4.1f })
+        .add<std::vector<float>>("buffer", { 1.f, 2.f, 3.f })
+        .add<std::vector<float>>("buffer", { 1.f, 2.f })
+        .add<std::vector<float>>("buffer", { 1.f });
 
 
     // parameter list debug view
