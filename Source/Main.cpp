@@ -10,7 +10,6 @@
 #include <type_traits>
 #include <typeinfo>
 #include <memory>
-#include <any>
 
 //==============================================================================
 
@@ -26,6 +25,7 @@ public:
     virtual const juce::Identifier& GetName() const = 0;
     virtual const std::type_info& GetType() const = 0;
     virtual operator juce::String() const = 0; // for debug & UI purposes
+    
 };
 
 
@@ -59,7 +59,8 @@ public:
     // base interface
     virtual const juce::Identifier& GetName() const override { return name_; }
     virtual const std::type_info& GetType() const override { return typeid(data_); }
-    
+
+    // implicit cast to juce::String for logging / UI
     virtual operator juce::String() const override
     {
         if constexpr(std::is_same<T, bool>::value)
@@ -108,40 +109,36 @@ private:
 };
 
 
-class ParameterList
+class ParameterList : public std::vector<std::unique_ptr<Parameter>>
 {
 public:
+    // ...from other object
     template <typename T>
     ParameterList& add(const juce::Identifier Name, const T& InitialValue = {})
     {
-        auto [ it, res ] = existingNames_.insert(Name);
-        if(res)
-        {
-            list_.push_back(std::make_unique<ParamType<T>>(Name, InitialValue));
-        }
-        else
-        {
-            jassert(false); // inserting a parameter w/ an identical name to one that already exists in the list
-            // ignoring insert
-        }
-        
+        push_back(std::make_unique<ParamType<T>>(Name, InitialValue));
         return *this;
     }
 
+    // ...from r-value other
     template <typename T>
     ParameterList& add(const juce::Identifier Name, T&& InitialValue)
     {
-        list_.push_back(std::make_unique<ParamType<T>>(Name, InitialValue));
+        push_back(std::make_unique<ParamType<T>>(Name, InitialValue));
         return *this;
     }
 
-    // iterator forwarding
-    std::vector<std::unique_ptr<Parameter>>::iterator begin() { return list_.begin(); }
-    std::vector<std::unique_ptr<Parameter>>::iterator end() { return list_.end(); }
+    // ...from explicit ctor args
+    template <typename T, typename... Args>
+    ParameterList& add(const juce::Identifier Name, Args... args)
+    {
+        push_back(std::make_unique<ParamType<T>>(args...));
+        return *this;
+    }
+
     
 private:
-    std::vector<std::unique_ptr<Parameter>> list_;
-    std::set<juce::Identifier> existingNames_;
+    
 };
 
 struct Position3D
@@ -167,7 +164,6 @@ struct Position2D
         return res;
     }
 };
-
 
 
 int main (int, char*)
