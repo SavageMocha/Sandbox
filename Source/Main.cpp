@@ -25,7 +25,6 @@ public:
     // virtual interface
     virtual const juce::Identifier& GetName() const = 0;
     virtual const std::type_info& GetType() const = 0;
-    virtual std::any GetValue() const = 0;
     virtual operator juce::String() const = 0; // for debug & UI purposes
 };
 
@@ -48,16 +47,19 @@ public:
 
     // dtor
     virtual ~ParamType() override = default;
+
+    // implicit cast to underlying type
+    operator T&() { return data_; }
+    operator T() { return data_; }
     
     // template interface
-    T get() const { return data_; }
-
-    void set(const T& inValue) { data_ = inValue; }
+    T& operator*() { return data_; }
+    const T& operator*() const { return data_; }
 
     // base interface
     virtual const juce::Identifier& GetName() const override { return name_; }
     virtual const std::type_info& GetType() const override { return typeid(data_); }
-    virtual std::any GetValue() const override { return data_; }
+    
     virtual operator juce::String() const override
     {
         if constexpr(std::is_same<T, bool>::value)
@@ -184,8 +186,8 @@ int main (int, char*)
         .add<float>("HPF frequency")
         .add<float>("Num Taps", 4)
         .add<bool>("Enabled?", false)
-        .add<Position3D>("Source Position3D", {0.f, 25.f, 10.f})
-        .add<Position2D>("Source Position2D", {0.f, 25.f})
+        .add<Position3D>("Source Position3D", { 0.f, 25.f, 10.f })
+        .add<Position2D>("Source Position2D", { 0.f, 25.f })
         .add<std::vector<float>>("buffer", myBuffer)
         .add<std::vector<float>>("buffer", { 1.1f, 2.1f, 3.1f, 4.1f })
         .add<std::vector<float>>("buffer", { 1.f, 2.f, 3.f })
@@ -202,7 +204,15 @@ int main (int, char*)
 
         DBG(name + " = " + value + " -- type: (" + type + ")");
     }
+
     
+    // parameter manipulation
+    ParamType<float> float1("My Float", 1.f);
+    ParamType<float> float2("My Float", 2.f);
+
+    ParamType<float> float3("My Float");
+    *float3 = *float1 + *float2;
+    jassert(*float3 == 3.f);
 
     return 0;
 }
