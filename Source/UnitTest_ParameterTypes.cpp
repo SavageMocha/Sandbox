@@ -19,10 +19,18 @@ namespace Haze
   {
     // ...easily declare a list of parameters (w/ unique names) via builder pattern
     beginTest("Parameter list declaration");
-    
-    ParameterList paramList;
-    paramList
-      .add<float>("freq.", 50.f);
+
+    const juce::Identifier Freq("freq.");
+
+    ParameterList param_list;
+    param_list
+      .add<float>(Freq, 500.f)
+      .add<int>("Num Taps", 4)
+    ;
+
+    auto& X = param_list.Get(Freq);
+
+    // ...Assign to/from the underlying data using operator[] and operator=
     
 
     // ...cache a read-only reference to the value
@@ -43,7 +51,7 @@ namespace Haze
     beginTest("Thread-safe get()");
     
   }
-
+  
 
   
 } // Haze
