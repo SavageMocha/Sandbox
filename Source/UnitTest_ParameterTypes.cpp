@@ -24,13 +24,34 @@ namespace Haze
 
     ParameterList param_list;
     param_list
-      .add<float>(Freq, 500.f)
-      .add<int>("Num Taps", 4)
+      .add(Freq, 500.f)
+      .add("Num Taps", 4)
     ;
 
-    auto& X = param_list.Get(Freq);
-
     // ...Assign to/from the underlying data using operator[] and operator=
+    //      and compare the entry w/ a value of the same type
+    int x = param_list["Num Taps"]->Get<int>();
+    expect(x == 4);
+
+    const bool bIsFour = param_list["Num Taps"]->IsEqualTo(4);
+    expect(bIsFour);
+
+    *param_list["Num Taps"] = 10;
+    expect(param_list["Num Taps"]->Get<int>() == 10);
+    expect(param_list["Num Taps"]->IsEqualTo(10));
+
+
+    float y = param_list[Freq]->Get<float>();
+    expect(y == 500.f);
+
+    const bool bIsEqual = param_list[Freq]->IsEqualTo(500.f);
+    expect(bIsEqual);
+
+    *param_list[Freq] = 15.f;
+    expect(param_list[Freq]->Get<float>() == 15.f);
+    expect(param_list[Freq]->IsEqualTo(15.f));
+    
+
     
 
     // ...cache a read-only reference to the value

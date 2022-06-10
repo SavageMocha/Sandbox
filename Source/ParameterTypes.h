@@ -44,7 +44,7 @@ namespace Haze
 
     // comparison
     template <typename T>
-    bool operator==(const T& other) const
+    bool IsEqualTo(const T& other) const
     {
       if(auto* downPtr = DowncastChecked<T>())
       {
@@ -63,12 +63,20 @@ namespace Haze
 
   private:
     
-    // downcast helper (runtime assert on failure)
+    // downcast helpers (runtime assert on failure)
     template <typename T>
-    ParamType<T>* DowncastChecked() const
+    ParamType<T>* DowncastChecked()
     {
       ParamType<T>* downPtr = dynamic_cast<ParamType<T>*>(this);
-      jassert(downPtr); // dynamic_cast failed! T != underlying 
+      jassert(downPtr); // dynamic_cast failed! T != underlying tye
+      return downPtr;
+    }
+
+    template <typename T>
+    const ParamType<T>* DowncastChecked() const
+    {
+      const ParamType<T>* downPtr = dynamic_cast<const ParamType<T>*>(this);
+      jassert(downPtr); // dynamic_cast failed! T != underlying type
       return downPtr;
     }
     
@@ -105,9 +113,12 @@ namespace Haze
 
   
 
+  using ParamListEntryType = std::unordered_map<std::string, std::unique_ptr<Parameter>>;
 
-  
-  class ParameterList : public std::unordered_map<std::string, std::unique_ptr<Parameter>>
+  // todo: instead of elements being the raw unique_ptr,
+  // wrap that in a struct that hides the ptr-deref syntax, and has ui meta-data
+  // a similar struct can be handed to a ParameterList::add() overload
+  class ParameterList : public ParamListEntryType
   {
   public:
 
@@ -115,24 +126,25 @@ namespace Haze
     template <typename T>
     ParameterList& add(juce::Identifier Name, T&& DefaultValue = {})
     {
-      this->emplace(std::make_unique<ParamType<T>>(Name, std::forward<T>(DefaultValue)));
+      // todo: disallow duplicate entries (name collision)
+      this->ParamListEntryType::operator[](Name.toString().toStdString())
+        = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
       return *this;
     }
 
-    // templatize index operator
     template <typename T>
-    const T& Get(const juce::Identifier& inName) const
+    ParameterList& add(std::string& Name, T&& DefaultValue = {})
     {
-      std::string key = inName.toString().toStdString();
-      return static_cast<const T&>(std::unordered_map<std::string, std::unique_ptr<Parameter>>::operator[](key));
+      this->ParamListEntryType::operator[](Name)
+        = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
+      return *this;
     }
 
-    template <typename T>
-    T& Get(const juce::Identifier& inName)
+    std::unique_ptr<Parameter>& operator[](const juce::Identifier Name)
     {
-      std::string key = inName.toString().toStdString();
-      return static_cast<T&>(std::unordered_map<std::string, std::unique_ptr<Parameter>>::operator[](key));
+      return this->ParamListEntryType::operator[](Name.toString().toStdString());
     }
+    
     
   }; //ParameterList
 } // namespace Haze
