@@ -92,7 +92,7 @@ namespace Haze
     }
     
 
-  }; // Parameter
+  }; // class Parameter
     
 
   
@@ -150,9 +150,11 @@ namespace Haze
   }; // ParamType<T>
   
 
-  using ParamListEntryType = std::unordered_map<std::string, std::unique_ptr<UiParameter>>;
+  // todo: provide ui metadata (range, tooltip, etc.)
+  using ParamListType = std::unordered_map<std::string, std::unique_ptr<UiParameter>>;
   
-  class ParameterList : public ParamListEntryType
+  class ParameterList : public ParamListType
+                      , public juce::ValueTree::Listener
   {
   public:
     // builder methods
@@ -171,7 +173,7 @@ namespace Haze
       // name collision (previous entry will be stomped!)
       jassert(this->find(Name) == this->end());
       
-      this->ParamListEntryType::operator[](Name)
+      this->ParamListType::operator[](Name)
         = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
       return *this;
     }
@@ -190,7 +192,7 @@ namespace Haze
       std::unique_ptr<UiParameter> NewEntry = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
       
       T& ref = NewEntry->GetRef<T>;
-      this->ParamListEntryType::operator[](Name) = std::move(NewEntry);
+      this->ParamListType::operator[](Name) = std::move(NewEntry);
 
       return ref;
     }
@@ -198,7 +200,7 @@ namespace Haze
     // index operator oveload for juce::Identifier
     std::unique_ptr<UiParameter>& operator[](const juce::Identifier Name)
     {
-      return this->ParamListEntryType::operator[](Name.toString().toStdString());
+      return this->ParamListType::operator[](Name.toString().toStdString());
     }
 
     
@@ -209,19 +211,36 @@ namespace Haze
       
       for(const auto& entry : *this)
       {
-        // todo: need access to a "to juce::var" function
         listTree.setProperty({entry.first}, juce::var(entry.second->GetAsVar()), nullptr);
       }
 
       return listTree;
     }
 
-    void SyncToTree(juce::ValueTree inTree)
+    // juce::ValueTree
+    void SyncToTree(juce::ValueTree& inTree)
     {
-      // todo
+      // take on the current state of inTree
+      const int numProperties = inTree.getNumProperties();
+      for (int i = 0; i < numProperties; ++i)
+      {
+        juce::Identifier name (inTree.getPropertyName(i));
+        (*this)[name]->SetAsVar(inTree.getProperty(name));
+      }
+      
+      inTree.addListener(this);
     }
-    
-  }; //ParameterList
+
+    void DesyncFromTree(juce::ValueTree& inTree)
+    {
+      inTree.removeListener(this);
+    }
+
+    virtual void valueTreePropertyChanged(juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property) override
+    {
+      (*this)[property]->SetAsVar(treeWhosePropertyHasChanged.getProperty(property));
+    }
+  }; // class ParameterList
 } // namespace Haze
 
 

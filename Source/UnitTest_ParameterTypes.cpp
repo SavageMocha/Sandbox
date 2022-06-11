@@ -26,6 +26,7 @@ namespace Haze
     param_list
       .add(Freq, 500.f)
       .add("Num_Taps", 4)
+      .add("Enabled", true)
     ;
 
     // ...Assign to/from the underlying data using operator[] and operator=
@@ -66,19 +67,38 @@ namespace Haze
     // ...bootstrap a juce::ValueTree from that list
     beginTest("Parameter GetRef(), (access updated value without indexing)");
     auto xmlString = param_list.BootstrapValueTree().toXmlString();
+    DBG("\n------------------------------");
     DBG(xmlString);
-
+    DBG("------------------------------\n");
     expect(xmlString.isEmpty() == false);
 
-
+    
     // ...synchronize my internal parameters to a juce::ValueTree
+    beginTest("Converting underlying data to/from juce::Var");
+    juce::var FreqVar = param_list[Freq]->GetAsVar();
+    expect(param_list[Freq]->IsEqualTo(static_cast<float>(FreqVar)));
 
+    FreqVar = 1234.0;
+    param_list[Freq]->SetAsVar(FreqVar);
+    expect(param_list[Freq]->IsEqualTo(1234.f));
+
+
+    bool& bEnabled = param_list["Enabled"]->GetRef<bool>();
+    bEnabled = false;
+    expect(param_list["Enabled"]->IsEqualTo(false));
+
+    // get tree and sync to it
+    juce::ValueTree paramListTree = param_list.BootstrapValueTree();
+    param_list.SyncToTree(paramListTree);
+    DBG("\n------------------------------");
+    DBG(paramListTree.toXmlString());
+    DBG("------------------------------\n");
     
     // ...so that when the value tree chanegs, my parameters will update internally
-
-
-    // ...retrieve the up-to-date underlying data in a thread safe way (for audio processing)
-    
+    paramListTree.setProperty({"Enabled"}, true, nullptr);
+    DBG("\n------------------------------");
+    DBG(paramListTree.toXmlString());
+    DBG("------------------------------\n");
   }
   
 
@@ -89,6 +109,6 @@ namespace Haze
 // random thought:
 /*
  *  it would be badass to have separate execution edges for different threads
- *  (i.e. UI thread vs Audio thread)
+ *  (i.e. UI thread vs Audio thread vs debug thread?)
  *  Data could be exchanged, but execution graphs would be separate
 */
