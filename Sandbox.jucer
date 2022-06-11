@@ -13,6 +13,9 @@
       <FILE id="GljExs" name="UnitTest_ParameterTypes.h" compile="0" resource="0"
             file="Source/UnitTest_ParameterTypes.h"/>
     </GROUP>
+    <FILE id="rUIBnm" name="ProcessorBase.cpp" compile="1" resource="0"
+          file="Source/ProcessorBase.cpp"/>
+    <FILE id="sUfOwV" name="ProcessorBase.h" compile="0" resource="0" file="Source/ProcessorBase.h"/>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
   <EXPORTFORMATS>
