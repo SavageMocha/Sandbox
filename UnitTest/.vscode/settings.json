@@ -1,0 +1,4 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}/.",
+    "git.ignoreLimitWarning": true
+}
