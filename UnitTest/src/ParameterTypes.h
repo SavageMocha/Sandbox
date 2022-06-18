@@ -160,13 +160,13 @@ namespace Haze
     template <typename T>
     ParameterList& add(juce::Identifier Name, T&& DefaultValue = {})
     {
-      std::string str = Name.toString().toStdString();
+      juce::String str = Name.toString();
       return add(str, std::forward<T>(DefaultValue));
     }
 
-    // add w/ std::string
+    // add w/ juce::String
     template <typename T>
-    ParameterList& add(std::string& Name, T&& DefaultValue = {})
+    ParameterList& add(juce::String& Name, T&& DefaultValue = {})
     {
       // name collision (previous entry will be stomped!)
       jassert(ParamMap.find(Name) == ParamMap.end());
@@ -179,12 +179,12 @@ namespace Haze
     template <typename T>
     T& addAndGetRef(juce::Identifier Name, T&& DefaultValue = {})
     {
-      return addAndGetRef(Name.toString().toStdString(), std::forward<T>(DefaultValue));
+      return addAndGetRef(Name.toString(), std::forward<T>(DefaultValue));
     }
 
-    // add + get ref w/ std::string
+    // add + get ref w/ juce::String
     template <typename T>
-    T& addAndGetRef(std::string& Name, T&& DefaultValue = {})
+    T& addAndGetRef(juce::String& Name, T&& DefaultValue = {})
     {
       std::unique_ptr<UiParameter> NewEntry = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
       
@@ -195,66 +195,32 @@ namespace Haze
     }
 
     // index operator for juce::Identifier
-    std::unique_ptr<UiParameter>& operator[](const juce::Identifier Name)
-    {
-      return ParamMap[Name.toString().toStdString()];
-    }
+    std::unique_ptr<UiParameter>& operator[](const juce::Identifier Name);
 
-    // index operator for std::string
-    std::unique_ptr<UiParameter>& operator[](const std::string& Name)
-    {
-      return ParamMap[Name];
-    }
+    // index operator for juce::String
+    std::unique_ptr<UiParameter>& operator[](const juce::String& Name);
 
     // index operator for const char[] of any length
     template <unsigned int N>
     std::unique_ptr<UiParameter>& operator[](const char (&Name)[N])
     {
-      return ParamMap[std::string(Name)];
+      return ParamMap[juce::String(Name)];
     }
     
     // juce::ValueTree sync
-    juce::ValueTree BootstrapValueTree() const
-    {
-      static juce::Identifier ParamList("Parameter_List");
-      juce::ValueTree listTree(ParamList);
-      
-      for(const auto& entry : ParamMap)
-      {
-        listTree.setProperty({entry.first}, juce::var(entry.second->GetAsVar()), nullptr);
-      }
+    juce::ValueTree BootstrapValueTree() const;
 
-      return listTree;
-    }
+    void SyncToTree(juce::ValueTree& inTree);
 
-    void SyncToTree(juce::ValueTree& inTree)
-    {
-      // take on the current state of inTree
-      const int numProperties = inTree.getNumProperties();
-      for (int i = 0; i < numProperties; ++i)
-      {
-        juce::Identifier name (inTree.getPropertyName(i));
-        ParamMap[name.toString().toStdString()]->SetAsVar(inTree.getProperty(name));
-      }
-      
-      inTree.addListener(this);
-    }
-
-    void DesyncFromTree(juce::ValueTree& inTree)
-    {
-      inTree.removeListener(this);
-    }
+    void DesyncFromTree(juce::ValueTree& inTree);
 
     private:
 
     // value tree listener callback
-    virtual void valueTreePropertyChanged(juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property) override
-    {
-      ParamMap[property.toString().toStdString()]->SetAsVar(treeWhosePropertyHasChanged.getProperty(property));
-    }
+    virtual void valueTreePropertyChanged(juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property) override;
 
     // underlying "list" (map)
-    std::unordered_map<std::string, std::unique_ptr<UiParameter>> ParamMap;
+    std::unordered_map<juce::String, std::unique_ptr<UiParameter>> ParamMap;
 
   }; // class ParameterList
 } // namespace Haze
