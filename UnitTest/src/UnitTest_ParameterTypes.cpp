@@ -67,9 +67,7 @@ namespace Haze
     // ...bootstrap a juce::ValueTree from that list
     beginTest("Parameter GetRef(), (access updated value without indexing)");
     auto xmlString = param_list.BootstrapValueTree().toXmlString();
-    DBG("\n------------------------------");
-    DBG(xmlString);
-    DBG("------------------------------\n");
+
     expect(xmlString.isEmpty() == false);
 
     
@@ -90,18 +88,11 @@ namespace Haze
     // get tree and sync to it
     juce::ValueTree paramListTree = param_list.BootstrapValueTree();
     param_list.SyncToTree(paramListTree);
-    DBG("\n------------------------------");
-    DBG(paramListTree.toXmlString());
-    DBG("------------------------------\n");
     
     // ...so that when the value tree chanegs, my parameters will update internally
     paramListTree.setProperty({"Enabled"}, true, nullptr);
-    DBG("\n------------------------------");
-    DBG(paramListTree.toXmlString());
-    DBG("------------------------------\n");
+    expect(param_list["Enabled"]->IsEqualTo(true));
   }
-  
-
   
 } // Haze
 

@@ -144,20 +144,14 @@ namespace Haze
     }
 
   private:
-    T data_;
-    
+    T data_;    
   }; // ParamType<T>
 
 
-  struct UiParamMetaData
-  {
-    //  todo
-  };
+
+  
 
   // todo: provide ui metadata (range, tooltip, etc.)
-  uisng ParamEntryType = std::unique_ptr<UiParameter>;
-  using ParamListType = std::unordered_map<std::string, std::unique_ptr<UiParameter>>;
-  
   class ParameterList : public juce::ValueTree::Listener
   {
   public:
@@ -175,10 +169,9 @@ namespace Haze
     ParameterList& add(std::string& Name, T&& DefaultValue = {})
     {
       // name collision (previous entry will be stomped!)
-      jassert(this->find(Name) == this->end());
+      jassert(ParamMap.find(Name) == ParamMap.end());
       
-      this->ParamListType::operator[](Name)
-        = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
+      ParamMap[Name] = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
       return *this;
     }
 
@@ -196,24 +189,37 @@ namespace Haze
       std::unique_ptr<UiParameter> NewEntry = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
       
       T& ref = NewEntry->GetRef<T>();
-      this->ParamListType::operator[](Name) = std::move(NewEntry);
+      ParamMap[Name] = std::move(NewEntry);
 
       return ref;
     }
 
-    // index operator oveload for juce::Identifier
+    // index operator for juce::Identifier
     std::unique_ptr<UiParameter>& operator[](const juce::Identifier Name)
     {
-      return this->ParamListType::operator[](Name.toString().toStdString());
+      return ParamMap[Name.toString().toStdString()];
     }
 
+    // index operator for std::string
+    std::unique_ptr<UiParameter>& operator[](const std::string& Name)
+    {
+      return ParamMap[Name];
+    }
+
+    // index operator for const char[] of any length
+    template <unsigned int N>
+    std::unique_ptr<UiParameter>& operator[](const char (&Name)[N])
+    {
+      return ParamMap[std::string(Name)];
+    }
     
+    // juce::ValueTree sync
     juce::ValueTree BootstrapValueTree() const
     {
       static juce::Identifier ParamList("Parameter_List");
       juce::ValueTree listTree(ParamList);
       
-      for(const auto& entry : *this)
+      for(const auto& entry : ParamMap)
       {
         listTree.setProperty({entry.first}, juce::var(entry.second->GetAsVar()), nullptr);
       }
@@ -221,7 +227,6 @@ namespace Haze
       return listTree;
     }
 
-    // juce::ValueTree
     void SyncToTree(juce::ValueTree& inTree)
     {
       // take on the current state of inTree
@@ -229,7 +234,7 @@ namespace Haze
       for (int i = 0; i < numProperties; ++i)
       {
         juce::Identifier name (inTree.getPropertyName(i));
-        (*this)[name]->SetAsVar(inTree.getProperty(name));
+        ParamMap[name.toString().toStdString()]->SetAsVar(inTree.getProperty(name));
       }
       
       inTree.addListener(this);
@@ -240,13 +245,17 @@ namespace Haze
       inTree.removeListener(this);
     }
 
+    private:
+
+    // value tree listener callback
     virtual void valueTreePropertyChanged(juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property) override
     {
-      (*this)[property]->SetAsVar(treeWhosePropertyHasChanged.getProperty(property));
+      ParamMap[property.toString().toStdString()]->SetAsVar(treeWhosePropertyHasChanged.getProperty(property));
     }
 
-    private:
-    public ParamListType
+    // underlying "list" (map)
+    std::unordered_map<std::string, std::unique_ptr<UiParameter>> ParamMap;
+
   }; // class ParameterList
 } // namespace Haze
 
