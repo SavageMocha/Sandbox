@@ -21,26 +21,28 @@ namespace Haze
     beginTest("Parameter list declaration");
 
     const juce::Identifier Freq("freq");
+    const juce::Identifier NumTaps("NumTaps");
+    const juce::Identifier Enabled("Enabled");
 
     ParameterList param_list;
     param_list
-      .add(Freq, 500.f, { "filter cutoff", "hz", false, true })
-      .add("Num_Taps", 4)
-      .add("Enabled", true)
+      .add(Freq, 500.f, { /*tooltip*/"filter cutoff freq.", /*units*/"hz", /*bPreferSliderOverKnob*/false, /*bIsLogarithmic*/true })
+      .add(NumTaps, 4)
+      .add(Enabled, true)
     ;
 
     // ...Assign to/from the underlying data using operator[] and operator=
     //      and compare the entry w/ a value of the same type
     beginTest("Parameter Get, Set, and Comparison");
-    int x = param_list["Num_Taps"]->Get<int>();
+    int x = param_list[NumTaps]->Get<int>();
     expect(x == 4);
 
-    const bool bIsFour = param_list["Num_Taps"]->IsEqualTo(4);
+    const bool bIsFour = param_list[NumTaps]->IsEqualTo(4);
     expect(bIsFour);
 
-    *param_list["Num_Taps"] = 10;
-    expect(param_list["Num_Taps"]->Get<int>() == 10);
-    expect(param_list["Num_Taps"]->IsEqualTo(10));
+    *param_list[NumTaps] = 10;
+    expect(param_list[NumTaps]->Get<int>() == 10);
+    expect(param_list[NumTaps]->IsEqualTo(10));
     
     float y = param_list[Freq]->Get<float>();
     expect(y == 500.f);
@@ -53,15 +55,15 @@ namespace Haze
     expect(param_list[Freq]->IsEqualTo(15.f));
 
     beginTest("Parameter GetRef(), (access updated value without indexing)");
-    int& xRef = param_list["Num_Taps"]->GetRef<int>();
+    int& xRef = param_list[NumTaps]->GetRef<int>();
     int currX = xRef;
 
-    *param_list["Num_Taps"] = 111;
+    *param_list[NumTaps] = 111;
     expect(currX != xRef);
     expect(xRef == 111);
 
     xRef = 222;
-    expect(param_list["Num_Taps"]->IsEqualTo(222) == true);
+    expect(param_list[NumTaps]->IsEqualTo(222) == true);
 
 
     // ...bootstrap a juce::ValueTree from that list
@@ -78,9 +80,9 @@ namespace Haze
     param_list[Freq]->SetAsVar(FreqVar);
     expect(param_list[Freq]->IsEqualTo(1234.f));
 
-    bool& bEnabled = param_list["Enabled"]->GetRef<bool>();
+    bool& bEnabled = param_list[Enabled]->GetRef<bool>();
     bEnabled = false;
-    expect(param_list["Enabled"]->IsEqualTo(false));
+    expect(param_list[Enabled]->IsEqualTo(false));
 
     // get tree and sync to it
     juce::ValueTree paramListTree = param_list.GetStateAsTree();
@@ -88,7 +90,7 @@ namespace Haze
     
     // ...so that when the value tree chanegs, my parameters will update internally
     paramListTree.setProperty({"Enabled"}, true, nullptr);
-    expect(param_list["Enabled"]->IsEqualTo(true));
+    expect(param_list[Enabled]->IsEqualTo(true));
   }
   
 } // Haze

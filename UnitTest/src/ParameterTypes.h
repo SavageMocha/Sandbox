@@ -8,8 +8,12 @@
   ==============================================================================
 */
 
+#pragma once
+
 #include <JuceHeader.h>
 #include <type_traits>
+#include <algorithm>
+#include <optional>
 #include <memory>
 
 namespace Haze
@@ -188,45 +192,50 @@ namespace Haze
   {
       struct ParameterEntry
       {
-        std::unique_ptr<UiParameter> ParamPtr;
-        UiMetadata Metadata;
+        juce::Identifier id;
+        std::unique_ptr<UiParameter> paramPtr;
+
+        bool operator==(const juce::Identifier& Name) { return Name == id; } // std::find_if
+
+        // ctor
+        ParameterEntry(const juce::Identifier& inId, std::unique_ptr<UiParameter>&& inParamPtr)
+        : id(inId)
+        , paramPtr(std::forward<std::unique_ptr<UiParameter>>(inParamPtr))
+        {}
       };
 
-  public:
-    // builder methods
-    // add w/ juce::Identifier
-    template <typename T>
-    ParameterList& add(juce::Identifier Name, T&& DefaultValue = {}, UiMetadata&& MetaData = {})
-    {
-      juce::String str = Name.toString();
-      return add(str, std::forward<T>(DefaultValue), std::forward<UiMetadata>(MetaData));
-    }
+      struct UiMetadataEntry
+      {
+        juce::Identifier id;
+        UiMetadata Metadata;
 
-    // add w/ juce::String
+        bool operator==(const juce::Identifier& Name) { return Name == id; } // std::find_if
+
+        // ctor
+        UiMetadataEntry(const juce::Identifier& inId, UiMetadata&& inMetadata)
+        : id(inId)
+        , Metadata(inMetadata)
+        {}
+      };
+
+
+  public:
+    // builder method
     template <typename T>
-    ParameterList& add(juce::String& Name, T&& DefaultValue = {}, UiMetadata&& MetaData = {})
+    ParameterList& add(const juce::Identifier& Name, T&& DefaultValue = {}, UiMetadata&& MetaData = {})
     {
-      // name collision (previous entry will be stomped!)
-      jassert(ParamMap.find(Name) == ParamMap.end());
-      
-      // todo: ingest metatada
-      ParamMap[Name] = { std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue)), MetaData };
+      // check for name collision (previous entry will be stomped!)
+      jassert(parameters_.end() == std::find(parameters_.begin(), parameters_.end(), Name));
+      jassert(uiMetadata_.end() == std::find(uiMetadata_.begin(), uiMetadata_.end(), Name));
+
+      parameters_.emplace_back(ParameterEntry(Name, std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue))));
+      uiMetadata_.emplace_back(UiMetadataEntry(Name, std::forward<UiMetadata>(MetaData)));
 
       return *this;
     }
 
-    // index operator for const char[] of any length
-    template <unsigned int N>
-    std::unique_ptr<UiParameter>& operator[](const char (&Name)[N])
-    {
-      return ParamMap[juce::String(Name)].ParamPtr;
-    }
-
     // index operator for juce::Identifier
     std::unique_ptr<UiParameter>& operator[](const juce::Identifier Name);
-
-    // index operator for juce::String
-    std::unique_ptr<UiParameter>& operator[](const juce::String& Name);
     
     // juce::ValueTree sync
     juce::ValueTree GetStateAsTree() const;
@@ -237,8 +246,23 @@ namespace Haze
     // value tree listener callback
     virtual void valueTreePropertyChanged(juce::ValueTree& tree, const juce::Identifier& property) override;
 
-    // underlying "list" (map)
-    std::unordered_map<juce::String, ParameterEntry> ParamMap;
+    // helper functions for finding an element by name
+    template <typename T>
+    T* FindEntryByName(juce::Identifier Name, std::vector<T>& vec)
+    {
+      if(auto it = std::find(vec.begin(), vec.end(), Name); it != vec.end())
+      {
+        return &(*it);
+      }
+      
+      // we should never be asking about an entry that doesn't exist!
+      jassert(false);
+      return nullptr;
+    }
+
+    // underlying "lists"
+    std::vector<ParameterEntry> parameters_;
+    std::vector<UiMetadataEntry> uiMetadata_;
 
   }; // class ParameterList
   

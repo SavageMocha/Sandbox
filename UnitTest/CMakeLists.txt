@@ -16,7 +16,7 @@ cmake_minimum_required(VERSION 3.15)
 # `project()` command. `project()` sets up some helpful variables that describe source/binary
 # directories, and the current project version. This is a standard CMake command.
 
-project(CONSOLE_APP_EXAMPLE VERSION 0.0.1)
+project(HAZE_UNIT_TESTS VERSION 0.0.1)
 
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -31,12 +31,12 @@ set(CMAKE_CXX_STANDARD 17)
 add_subdirectory(lib/JUCE)                    # If you've put JUCE in a subdirectory called JUCE
 
 # `juce_add_console_app` adds an executable target with the name passed as the first argument
-# (ConsoleAppExample here). This target is a normal CMake target, but has a lot of extra properties
+# (HazeUnitTests here). This target is a normal CMake target, but has a lot of extra properties
 # set up by default. This function accepts many optional arguments. Check the readme at
 # `docs/CMake API.md` in the JUCE repo for the full list.
 
-juce_add_console_app(ConsoleAppExample
-    PRODUCT_NAME "Console App Example")     # The name of the final executable, which can differ from the target name
+juce_add_console_app(HazeUnitTests
+    PRODUCT_NAME "Haze Unit Tests")     # The name of the final executable, which can differ from the target name
 
 # `juce_generate_juce_header` will create a JuceHeader.h for a given target, which will be generated
 # into the build tree. This header should be included with `#include <JuceHeader.h>`. The include
@@ -44,18 +44,19 @@ juce_add_console_app(ConsoleAppExample
 # JuceHeader is to include all the JUCE module headers for a particular target; if you're happy to
 # include module headers directly, you probably don't need to call this.
 
-juce_generate_juce_header(ConsoleAppExample)
+juce_generate_juce_header(HazeUnitTests)
 
 # `target_sources` adds source files to a target. We pass the target that needs the sources as the
 # first argument, then a visibility parameter for the sources which should normally be PRIVATE.
 # Finally, we supply a list of source files that will be built into the target. This is a standard
 # CMake command.
 
-target_sources(ConsoleAppExample
+target_sources(HazeUnitTests
     PRIVATE
         src/Main.cpp
         src/ParamaterTypes.cpp
         src/UnitTest_ParameterTypes.cpp
+        src/ProcessorBase.cpp
     )
 
 # `target_compile_definitions` adds some preprocessor definitions to our target. In a Projucer
@@ -65,7 +66,7 @@ target_sources(ConsoleAppExample
 # definitions will be visible both to your code, and also the JUCE module code, so for new
 # definitions, pick unique names that are unlikely to collide! This is a standard CMake command.
 
-target_compile_definitions(ConsoleAppExample
+target_compile_definitions(HazeUnitTests
     PRIVATE
         # JUCE_WEB_BROWSER and JUCE_USE_CURL would be on by default, but you might not need them.
         JUCE_WEB_BROWSER=0  # If you remove this, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_console_app` call
@@ -85,7 +86,7 @@ target_compile_definitions(ConsoleAppExample
 # resolved automatically. If you'd generated a binary data target above, you would need to link to
 # it here too. This is a standard CMake command.
 
-target_link_libraries(ConsoleAppExample
+target_link_libraries(HazeUnitTests
     PRIVATE
         # ConsoleAppData            # If you'd created a binary data target, you'd link to it here
         juce::juce_core
