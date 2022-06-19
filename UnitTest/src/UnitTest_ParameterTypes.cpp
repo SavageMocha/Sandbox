@@ -24,7 +24,7 @@ namespace Haze
 
     ParameterList param_list;
     param_list
-      .add(Freq, 500.f)
+      .add(Freq, 500.f, { "filter cutoff", "hz", false, true })
       .add("Num_Taps", 4)
       .add("Enabled", true)
     ;
@@ -65,11 +65,9 @@ namespace Haze
 
 
     // ...bootstrap a juce::ValueTree from that list
-    beginTest("Parameter GetRef(), (access updated value without indexing)");
-    auto xmlString = param_list.BootstrapValueTree().toXmlString();
-
+    beginTest("Bootstrap juce::ValueTree from ParameterList");
+    auto xmlString = param_list.GetStateAsTree().toXmlString();
     expect(xmlString.isEmpty() == false);
-
     
     // ...synchronize my internal parameters to a juce::ValueTree
     beginTest("Converting underlying data to/from juce::Var");
@@ -80,13 +78,12 @@ namespace Haze
     param_list[Freq]->SetAsVar(FreqVar);
     expect(param_list[Freq]->IsEqualTo(1234.f));
 
-
     bool& bEnabled = param_list["Enabled"]->GetRef<bool>();
     bEnabled = false;
     expect(param_list["Enabled"]->IsEqualTo(false));
 
     // get tree and sync to it
-    juce::ValueTree paramListTree = param_list.BootstrapValueTree();
+    juce::ValueTree paramListTree = param_list.GetStateAsTree();
     param_list.SyncToTree(paramListTree);
     
     // ...so that when the value tree chanegs, my parameters will update internally

@@ -16,7 +16,7 @@ int main()
 {
     juce::UnitTestRunner TestRunner;
 
-    TestRunner.setPassesAreLogged(true);
+    TestRunner.setPassesAreLogged(false);
     TestRunner.runAllTests();
 
     return 0;

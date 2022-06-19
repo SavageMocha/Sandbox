@@ -12,28 +12,28 @@
 
 namespace Haze
 {
-
+// ParameterList impl:
     // index operator for juce::Identifier
     std::unique_ptr<UiParameter>& ParameterList::operator[](const juce::Identifier Name)
     {
-      return ParamMap[Name.toString().toStdString()];
+      return ParamMap[Name.toString().toStdString()].ParamPtr;
     }
 
     // index operator for juce::String
     std::unique_ptr<UiParameter>& ParameterList::operator[](const juce::String& Name)
     {
-      return ParamMap[Name];
+      return ParamMap[Name].ParamPtr;
     }
     
     // juce::ValueTree sync
-    juce::ValueTree ParameterList::BootstrapValueTree() const
+    juce::ValueTree ParameterList::GetStateAsTree() const
     {
       static juce::Identifier ParamList("Parameter_List");
       juce::ValueTree listTree(ParamList);
       
       for(const auto& entry : ParamMap)
       {
-        listTree.setProperty({entry.first}, juce::var(entry.second->GetAsVar()), nullptr);
+        listTree.setProperty({entry.first}, juce::var(entry.second.ParamPtr->GetAsVar()), nullptr);
       }
 
       return listTree;
@@ -46,7 +46,7 @@ namespace Haze
       for (int i = 0; i < numProperties; ++i)
       {
         juce::Identifier name (inTree.getPropertyName(i));
-        ParamMap[name.toString()]->SetAsVar(inTree.getProperty(name));
+        ParamMap[name.toString()].ParamPtr->SetAsVar(inTree.getProperty(name));
       }
       
       inTree.addListener(this);
@@ -58,10 +58,11 @@ namespace Haze
     }
 
     // value tree listener callback
-    void ParameterList::valueTreePropertyChanged(juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property)
+    void ParameterList::valueTreePropertyChanged(juce::ValueTree& tree, const juce::Identifier& property)
     {
-      ParamMap[property.toString()]->SetAsVar(treeWhosePropertyHasChanged.getProperty(property));
+      ParamMap[property.toString()].ParamPtr->SetAsVar(tree.getProperty(property));
     }
+
 } // namespace Haze
 
 

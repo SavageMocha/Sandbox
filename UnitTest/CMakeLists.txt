@@ -54,8 +54,8 @@ juce_generate_juce_header(ConsoleAppExample)
 target_sources(ConsoleAppExample
     PRIVATE
         src/Main.cpp
-        src/UnitTest_ParameterTypes.cpp
         src/ParamaterTypes.cpp
+        src/UnitTest_ParameterTypes.cpp
     )
 
 # `target_compile_definitions` adds some preprocessor definitions to our target. In a Projucer

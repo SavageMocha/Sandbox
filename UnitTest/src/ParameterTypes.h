@@ -69,6 +69,24 @@ namespace Haze
     {
       return **DowncastChecked<T>();
     }
+
+    template<typename T>
+    void SetInPlaceClamper(std::function<void(T&)>&& lambda)
+    {
+        ParamType<T>* **downPtr = DowncastChecked<T>();
+        jassert(downPtr);
+
+        downPtr->InPlaceClamper = lambda;
+    }
+
+    template<typename T>
+    std::function<void(T&)>& GetInPlaceClamper()
+    {
+        ParamType<T>* **downPtr = DowncastChecked<T>();
+        jassert(downPtr);
+
+        return downPtr->InPlaceClamper;
+    }
   
 
   private:
@@ -88,12 +106,10 @@ namespace Haze
       const ParamType<T>* downPtr = dynamic_cast<const ParamType<T>*>(this);
       jassert(downPtr); // dynamic_cast failed! T != underlying type
       return downPtr;
-    }
-    
+    }  
 
   }; // class Parameter
     
-
   
   template <typename T>
   class ParamType : public UiParameter
@@ -143,55 +159,67 @@ namespace Haze
       return data_;
     }
 
+    std::function<void(T&)> InPlaceClamper = [](T& t){juce::ignoreUnused(t);};
+
   private:
     T data_;    
   }; // ParamType<T>
 
 
 
+  struct UiMetadata
+  {
+    juce::String ToolTip_;
+    juce::String Units_;
+    bool bPreferSliderOverKnob_;
+    bool bIsLogarithmic_;
+
+    // ctor
+    UiMetadata(juce::String&& ToolTip = "N/A", juce::String&& Units = {}, bool bPreferSliderOverKnob = false, bool bIsLogarithmic = false)
+    : ToolTip_(ToolTip)
+    , Units_(Units)
+    , bPreferSliderOverKnob_(bPreferSliderOverKnob)
+    , bIsLogarithmic_(bIsLogarithmic)
+    {}
+  };
   
 
-  // todo: provide ui metadata (range, tooltip, etc.)
   class ParameterList : public juce::ValueTree::Listener
   {
+      struct ParameterEntry
+      {
+        std::unique_ptr<UiParameter> ParamPtr;
+        UiMetadata Metadata;
+      };
+
   public:
     // builder methods
     // add w/ juce::Identifier
     template <typename T>
-    ParameterList& add(juce::Identifier Name, T&& DefaultValue = {})
+    ParameterList& add(juce::Identifier Name, T&& DefaultValue = {}, UiMetadata&& MetaData = {})
     {
       juce::String str = Name.toString();
-      return add(str, std::forward<T>(DefaultValue));
+      return add(str, std::forward<T>(DefaultValue), std::forward<UiMetadata>(MetaData));
     }
 
     // add w/ juce::String
     template <typename T>
-    ParameterList& add(juce::String& Name, T&& DefaultValue = {})
+    ParameterList& add(juce::String& Name, T&& DefaultValue = {}, UiMetadata&& MetaData = {})
     {
       // name collision (previous entry will be stomped!)
       jassert(ParamMap.find(Name) == ParamMap.end());
       
-      ParamMap[Name] = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
+      // todo: ingest metatada
+      ParamMap[Name] = { std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue)), MetaData };
+
       return *this;
     }
 
-    // add + get ref w/ juce::identifier
-    template <typename T>
-    T& addAndGetRef(juce::Identifier Name, T&& DefaultValue = {})
+    // index operator for const char[] of any length
+    template <unsigned int N>
+    std::unique_ptr<UiParameter>& operator[](const char (&Name)[N])
     {
-      return addAndGetRef(Name.toString(), std::forward<T>(DefaultValue));
-    }
-
-    // add + get ref w/ juce::String
-    template <typename T>
-    T& addAndGetRef(juce::String& Name, T&& DefaultValue = {})
-    {
-      std::unique_ptr<UiParameter> NewEntry = std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue));
-      
-      T& ref = NewEntry->GetRef<T>();
-      ParamMap[Name] = std::move(NewEntry);
-
-      return ref;
+      return ParamMap[juce::String(Name)].ParamPtr;
     }
 
     // index operator for juce::Identifier
@@ -199,30 +227,21 @@ namespace Haze
 
     // index operator for juce::String
     std::unique_ptr<UiParameter>& operator[](const juce::String& Name);
-
-    // index operator for const char[] of any length
-    template <unsigned int N>
-    std::unique_ptr<UiParameter>& operator[](const char (&Name)[N])
-    {
-      return ParamMap[juce::String(Name)];
-    }
     
     // juce::ValueTree sync
-    juce::ValueTree BootstrapValueTree() const;
-
+    juce::ValueTree GetStateAsTree() const;
     void SyncToTree(juce::ValueTree& inTree);
-
     void DesyncFromTree(juce::ValueTree& inTree);
 
-    private:
-
+  private:
     // value tree listener callback
-    virtual void valueTreePropertyChanged(juce::ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property) override;
+    virtual void valueTreePropertyChanged(juce::ValueTree& tree, const juce::Identifier& property) override;
 
     // underlying "list" (map)
-    std::unordered_map<juce::String, std::unique_ptr<UiParameter>> ParamMap;
+    std::unordered_map<juce::String, ParameterEntry> ParamMap;
 
   }; // class ParameterList
+  
 } // namespace Haze
 
 
