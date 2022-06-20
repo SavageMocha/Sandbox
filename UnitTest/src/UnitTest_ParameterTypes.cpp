@@ -26,7 +26,7 @@ namespace Haze
 
     ParameterList param_list;
     param_list
-      .add(Freq, 500.f, { /*tooltip*/"filter cutoff freq.", /*units*/"hz", /*bPreferSliderOverKnob*/false, /*bIsLogarithmic*/true })
+      .add(Freq, 500.f, {/*Display Name*/"Freq.", /*tooltip*/"filter cutoff freq.", /*units*/"hz", /*bPreferSliderOverKnob*/false, /*bIsLogarithmic*/true })
       .add(NumTaps, 4)
       .add(Enabled, true)
     ;

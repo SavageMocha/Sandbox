@@ -173,14 +173,16 @@ namespace Haze
 
   struct UiMetadata
   {
+    juce::String DisplayName_;
     juce::String ToolTip_;
     juce::String Units_;
     bool bPreferSliderOverKnob_;
     bool bIsLogarithmic_;
 
     // ctor
-    UiMetadata(juce::String&& ToolTip = "N/A", juce::String&& Units = {}, bool bPreferSliderOverKnob = false, bool bIsLogarithmic = false)
-    : ToolTip_(ToolTip)
+    UiMetadata(juce::String&& DisplayName = "", juce::String&& ToolTip = "N/A", juce::String&& Units = {}, bool bPreferSliderOverKnob = false, bool bIsLogarithmic = false)
+    : DisplayName_(DisplayName)
+    , ToolTip_(ToolTip)
     , Units_(Units)
     , bPreferSliderOverKnob_(bPreferSliderOverKnob)
     , bIsLogarithmic_(bIsLogarithmic)
