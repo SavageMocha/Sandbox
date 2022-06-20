@@ -25,10 +25,11 @@ namespace Haze
     public:
         void SetProcessor(const ProcessorInterface& processor)
         {
+            
         }
 
     private:
-        ParameterList paramList_;
+        
     }; // class ProcessorProxy
 
 } // namespace Haze

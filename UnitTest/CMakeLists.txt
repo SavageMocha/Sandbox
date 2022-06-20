@@ -35,7 +35,7 @@ add_subdirectory(lib/JUCE)                    # If you've put JUCE in a subdirec
 # set up by default. This function accepts many optional arguments. Check the readme at
 # `docs/CMake API.md` in the JUCE repo for the full list.
 
-juce_add_console_app(HazeUnitTests
+juce_add_gui_app(HazeUnitTests
     PRODUCT_NAME "Haze Unit Tests")     # The name of the final executable, which can differ from the target name
 
 # `juce_generate_juce_header` will create a JuceHeader.h for a given target, which will be generated
@@ -54,9 +54,10 @@ juce_generate_juce_header(HazeUnitTests)
 target_sources(HazeUnitTests
     PRIVATE
         src/Main.cpp
+        src/MainComponent.cpp
         src/ParamaterTypes.cpp
         src/UnitTest_ParameterTypes.cpp
-        src/ProcessorBase.cpp
+	src/ProcessorBase.cpp
     )
 
 # `target_compile_definitions` adds some preprocessor definitions to our target. In a Projucer
@@ -70,7 +71,12 @@ target_compile_definitions(HazeUnitTests
     PRIVATE
         # JUCE_WEB_BROWSER and JUCE_USE_CURL would be on by default, but you might not need them.
         JUCE_WEB_BROWSER=0  # If you remove this, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_console_app` call
-        JUCE_USE_CURL=0)    # If you remove this, add `NEEDS_CURL TRUE` to the `juce_add_console_app` call
+        JUCE_USE_CURL=0    # If you remove this, add `NEEDS_CURL TRUE` to the `juce_add_console_app` call
+        JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:HazeUnitTests,JUCE_PRODUCT_NAME>"
+        JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:HazeUnitTests,JUCE_VERSION>"
+        )
+
+        
 
 # If the target needs extra binary assets, they can be added here. The first argument is the name of
 # a new static library target that will include all the binary resources. There is an optional
@@ -91,6 +97,8 @@ target_link_libraries(HazeUnitTests
         # ConsoleAppData            # If you'd created a binary data target, you'd link to it here
         juce::juce_core
         juce::juce_data_structures
+	    juce::juce_gui_basics
+        juce::juce_gui_extra
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
