@@ -74,23 +74,9 @@ namespace Haze
       return **DowncastChecked<T>();
     }
 
-    template<typename T>
-    void SetInPlaceClamper(std::function<void(T&)>&& lambda)
-    {
-        ParamType<T>* **downPtr = DowncastChecked<T>();
-        jassert(downPtr);
+    void SetInPlaceClamper(std::function<void(juce::var&)>&& lambda);
 
-        downPtr->InPlaceClamper = lambda;
-    }
-
-    template<typename T>
-    std::function<void(T&)>& GetInPlaceClamper()
-    {
-        ParamType<T>* **downPtr = DowncastChecked<T>();
-        jassert(downPtr);
-
-        return downPtr->InPlaceClamper;
-    }
+    std::function<void(juce::var&)>& GetInPlaceClamper();
   
 
   private:
@@ -111,6 +97,8 @@ namespace Haze
       jassert(downPtr); // dynamic_cast failed! T != underlying type
       return downPtr;
     }  
+
+    std::function<void(juce::var&)> InPlaceClamper = [](juce::var& x){juce::ignoreUnused(x);};
 
   }; // class Parameter
     
@@ -141,29 +129,14 @@ namespace Haze
       return {};
     }
     
-    virtual void SetAsVar(const juce::var& inVar) override
-    {
-      data_ = inVar;
-    } 
+    virtual void SetAsVar(const juce::var& inVar) override { data_ = inVar; } 
 
 
-    ParamType& operator=(const T& inValue)
-    {
-      data_ = inValue;
-      return *this;
-    }
+    ParamType& operator=(const T& inValue) { data_ = inValue; return *this; }
 
-    const T& operator*() const
-    {
-      return data_;
-    }
+    const T& operator*() const { return data_; }
 
-    T& operator*()
-    {
-      return data_;
-    }
-
-    std::function<void(T&)> InPlaceClamper = [](T& t){juce::ignoreUnused(t);}; // todo: take juce::Var instead of T
+    T& operator*() { return data_; }
 
   private:
     T data_;    

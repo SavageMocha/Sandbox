@@ -12,6 +12,17 @@
 
 namespace Haze
 {
+// UiParameter impl:
+    void UiParameter::SetInPlaceClamper(std::function<void(juce::var&)>&& lambda)
+    {
+        InPlaceClamper = lambda;
+    }
+
+    std::function<void(juce::var&)>& UiParameter::GetInPlaceClamper()
+    {
+        return InPlaceClamper;
+    }
+
 // ParameterList impl:
     // index operator for juce::Identifier
     std::unique_ptr<UiParameter>& ParameterList::operator[](const juce::Identifier Name)
