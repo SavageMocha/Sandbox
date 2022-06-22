@@ -114,7 +114,7 @@ namespace Haze
 
   }; // class Parameter
     
-  
+  // todo: special-case T types for ui reflection (i.e. an Action type that reflects as a juce::TextButton)
   template <typename T>
   class ParamType : public UiParameter
   {
@@ -163,7 +163,7 @@ namespace Haze
       return data_;
     }
 
-    std::function<void(T&)> InPlaceClamper = [](T& t){juce::ignoreUnused(t);};
+    std::function<void(T&)> InPlaceClamper = [](T& t){juce::ignoreUnused(t);}; // todo: take juce::Var instead of T
 
   private:
     T data_;    
@@ -190,6 +190,7 @@ namespace Haze
   };
   
 
+  // todo: allow the DSP thread to update the UI
   class ParameterList : public juce::ValueTree::Listener
   {
       struct ParameterEntry
@@ -220,6 +221,17 @@ namespace Haze
         {}
       };
 
+      struct UiComponentEntry
+      {
+        juce::Identifier id;
+        std::unique_ptr<juce::Component> componentPtr;
+
+        UiComponentEntry(const juce::Identifier& inId,  std::unique_ptr<juce::Component> inComponentPtr)
+        : id(inId)
+        , componentPtr(std::move(inComponentPtr))
+        {}
+      };
+
 
   public:
     // builder method
@@ -230,8 +242,10 @@ namespace Haze
       jassert(parameters_.end() == std::find(parameters_.begin(), parameters_.end(), Name));
       jassert(uiMetadata_.end() == std::find(uiMetadata_.begin(), uiMetadata_.end(), Name));
 
-      parameters_.emplace_back(ParameterEntry(Name, std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue))));
-      uiMetadata_.emplace_back(UiMetadataEntry(Name, std::forward<UiMetadata>(MetaData)));
+      auto paramIt = parameters_.emplace(parameters_.end(), ParameterEntry(Name, std::make_unique<ParamType<T>>(std::forward<T>(DefaultValue))));
+      auto metadataIt = uiMetadata_.emplace(uiMetadata_.end(), UiMetadataEntry(Name, std::forward<UiMetadata>(MetaData)));
+      uiComponents_.emplace_back(UiComponentEntry(Name, CreateComponent<T>(*paramIt, *metadataIt)));
+      
 
       return *this;
     }
@@ -265,6 +279,25 @@ namespace Haze
     // underlying "lists"
     std::vector<ParameterEntry> parameters_;
     std::vector<UiMetadataEntry> uiMetadata_;
+    std::vector<UiComponentEntry> uiComponents_;
+    
+    // helper function that generates a juce::Component from the data presented
+    template <typename T>
+    std::unique_ptr<juce::Component> CreateComponent(const ParameterEntry& param, const UiMetadataEntry& metadata) const
+    {
+      juce::ignoreUnused(param, metadata);
+
+      // bool?
+//      constexpr if(std::is_same<bool, T>)
+
+      // enum?
+
+      // knob/slider?
+
+      return {}; // not in use yet
+    }
+
+    // component generatior sub-helpers
 
   }; // class ParameterList
   

@@ -25,6 +25,7 @@ namespace Haze
     public:
         void SetProcessor(const ProcessorInterface& processor)
         {
+            juce::ignoreUnused(processor);
             
         }
 
