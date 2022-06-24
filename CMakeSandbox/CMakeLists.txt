@@ -1,10 +1,13 @@
-cmake_minimum_required(VERSION 3.2)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+cmake_minimum_required(VERSION 3.21)
 
-project(hello VERSION 1.0)
+project(MyProject VERSION 1.0 DESCRIPTION "Very nice project" LANGUAGES CXX)
 
-add_executable(hello main.cpp)
 
-target_include_directories(hello PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/libA/)
+add_library(MyLib STATIC lib.cpp include/lib.h)
+target_include_directories(MyLib PUBLIC include)
+
+
+add_executable(MyExe main.cpp)
+target_include_directories(MyExe PUBLIC include)
+
+target_link_libraries(MyExe PUBLIC MyLib)
